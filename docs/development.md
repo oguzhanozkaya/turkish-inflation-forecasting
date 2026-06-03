@@ -57,7 +57,7 @@ Pipeline commands:
 
 `just run` executes the full pipeline in stage order: download, preprocess, train, and evaluate.
 
-Training and architecture defaults are controlled through environment variables documented in `docs/spec.md`. Use environment variables for longer or smaller runs, for example `TIF_EPOCHS=200 TIF_PATIENCE=20 just train`.
+Training defaults are intentionally moderate. Use environment variables for longer runs, for example `TIF_EPOCHS=200 TIF_PATIENCE=20 just train`.
 
 ### Quality and Verification Commands
 

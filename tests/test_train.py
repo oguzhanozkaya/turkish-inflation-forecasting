@@ -17,22 +17,10 @@ def test_pad_token_sequences_uses_utils_max_tokens() -> None:
 
 
 def test_sequence_plan_uses_lag_features() -> None:
-    variables, steps = tif.train._sequence_plan(["a_lag_1", "a_lag_2", "b_lag_1", "plain"], (2, 1, 0))
+    variables, steps = tif.train._sequence_plan(["a_lag_1", "a_lag_2", "b_lag_1", "plain"])
 
     assert variables == ["a"]
-    assert steps == [2, 1, 0]
-
-
-def test_training_config_reads_architecture_environment(monkeypatch) -> None:
-    monkeypatch.setenv("TIF_SEQUENCE_STEPS", "6,3,1")
-    monkeypatch.setenv("TIF_TEXT_KERNEL_SIZES", "2,4")
-    monkeypatch.setenv("TIF_FUSION_HIDDEN_SIZE", "96")
-
-    config = tif.train.TrainingConfig.from_environment()
-
-    assert config.sequence_steps == (6, 3, 1)
-    assert config.text_kernel_sizes == (2, 4)
-    assert config.fusion_hidden_size == 96
+    assert steps == list(tif.train.SEQUENCE_STEPS)
 
 
 def test_training_history_frame_extracts_neural_histories() -> None:

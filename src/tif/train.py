@@ -94,16 +94,9 @@ class TextCNNEncoder(nn.Module):
 class TextCNNRegressor(nn.Module):
     """Text-only inflation forecast model."""
 
-    def __init__(
-        self,
-        vocabulary_size: int,
-        embedding_dim: int = 64,
-        channel_count: int = 48,
-        kernel_sizes: tuple[int, ...] = (3, 4, 5),
-        dropout: float = 0.20,
-    ) -> None:
+    def __init__(self, vocabulary_size: int) -> None:
         super().__init__()
-        self.encoder = TextCNNEncoder(vocabulary_size, embedding_dim, channel_count, kernel_sizes, dropout)
+        self.encoder = TextCNNEncoder(vocabulary_size)
         self.head = nn.Linear(self.encoder.output_size, 1)
 
     def forward(self, token_ids: torch.Tensor) -> torch.Tensor:
@@ -113,19 +106,9 @@ class TextCNNRegressor(nn.Module):
 class FusionRegressor(nn.Module):
     """Numeric plus text fusion forecast model."""
 
-    def __init__(
-        self,
-        numeric_input_size: int,
-        vocabulary_size: int,
-        hidden_size: int = 128,
-        embedding_dim: int = 64,
-        channel_count: int = 48,
-        kernel_sizes: tuple[int, ...] = (3, 4, 5),
-        text_dropout: float = 0.20,
-        dropout: float = 0.15,
-    ) -> None:
+    def __init__(self, numeric_input_size: int, vocabulary_size: int, hidden_size: int = 128) -> None:
         super().__init__()
-        self.text_encoder = TextCNNEncoder(vocabulary_size, embedding_dim, channel_count, kernel_sizes, text_dropout)
+        self.text_encoder = TextCNNEncoder(vocabulary_size)
         self.numeric_projection = nn.Sequential(
             nn.Linear(numeric_input_size, hidden_size),
             nn.ReLU(),
@@ -133,7 +116,7 @@ class FusionRegressor(nn.Module):
         self.head = nn.Sequential(
             nn.Linear(hidden_size + self.text_encoder.output_size, hidden_size),
             nn.ReLU(),
-            nn.Dropout(dropout),
+            nn.Dropout(0.15),
             nn.Linear(hidden_size, 1),
         )
 
@@ -144,14 +127,7 @@ class FusionRegressor(nn.Module):
 
 
 LAG_FEATURE_PATTERN = re.compile(r"(?P<base>.+)_lag_(?P<lag>\d+)$")
-DEFAULT_SEQUENCE_STEPS = (12, 6, 3, 2, 1, 0)
-
-
-def _int_tuple_from_environment(name: str, default: tuple[int, ...]) -> tuple[int, ...]:
-    raw_value = os.environ.get(name)
-    if not raw_value:
-        return default
-    return tuple(int(value.strip()) for value in raw_value.split(",") if value.strip())
+SEQUENCE_STEPS = (12, 6, 3, 2, 1, 0)
 
 
 @dataclass(frozen=True)
@@ -159,53 +135,23 @@ class TrainingConfig:
     """Runtime training configuration."""
 
     seed: int = 447
-    epochs: int = 36000
-    patience: int = 100000
+    epochs: int = 80
+    patience: int = 12
     batch_size: int = 32
-    learning_rate: float = 1e-5
-    weight_decay: float = 0.0
-    early_stopping_min_delta: float = 1e-8
-    ridge_alpha: float = 1.0
+    learning_rate: float = 1e-3
     random_forest_trees: int = 200
-    random_forest_min_samples_leaf: int = 3
-    device: str = "cuda"
-    sequence_steps: tuple[int, ...] = DEFAULT_SEQUENCE_STEPS
-    numeric_mlp_hidden_size: int = 128
-    numeric_mlp_dropout: float = 0.15
-    numeric_gru_hidden_size: int = 64
-    numeric_gru_dropout: float = 0.10
-    text_embedding_dim: int = 64
-    text_channel_count: int = 48
-    text_kernel_sizes: tuple[int, ...] = (3, 4, 5)
-    text_dropout: float = 0.20
-    fusion_hidden_size: int = 128
-    fusion_dropout: float = 0.15
+    device: str = "auto"
 
     @classmethod
     def from_environment(cls) -> TrainingConfig:
         return cls(
             seed=int(os.environ.get("TIF_SEED", "447")),
-            epochs=int(os.environ.get("TIF_EPOCHS", "36000")),
-            patience=int(os.environ.get("TIF_PATIENCE", "100000")),
+            epochs=int(os.environ.get("TIF_EPOCHS", "80")),
+            patience=int(os.environ.get("TIF_PATIENCE", "12")),
             batch_size=int(os.environ.get("TIF_BATCH_SIZE", "32")),
-            learning_rate=float(os.environ.get("TIF_LEARNING_RATE", "0.00001")),
-            weight_decay=float(os.environ.get("TIF_WEIGHT_DECAY", "0.0")),
-            early_stopping_min_delta=float(os.environ.get("TIF_EARLY_STOPPING_MIN_DELTA", "0.00000001")),
-            ridge_alpha=float(os.environ.get("TIF_RIDGE_ALPHA", "1.0")),
+            learning_rate=float(os.environ.get("TIF_LEARNING_RATE", "0.001")),
             random_forest_trees=int(os.environ.get("TIF_RANDOM_FOREST_TREES", "200")),
-            random_forest_min_samples_leaf=int(os.environ.get("TIF_RANDOM_FOREST_MIN_SAMPLES_LEAF", "3")),
-            device=os.environ.get("TIF_DEVICE", "cuda"),
-            sequence_steps=_int_tuple_from_environment("TIF_SEQUENCE_STEPS", DEFAULT_SEQUENCE_STEPS),
-            numeric_mlp_hidden_size=int(os.environ.get("TIF_NUMERIC_MLP_HIDDEN_SIZE", "128")),
-            numeric_mlp_dropout=float(os.environ.get("TIF_NUMERIC_MLP_DROPOUT", "0.15")),
-            numeric_gru_hidden_size=int(os.environ.get("TIF_NUMERIC_GRU_HIDDEN_SIZE", "64")),
-            numeric_gru_dropout=float(os.environ.get("TIF_NUMERIC_GRU_DROPOUT", "0.10")),
-            text_embedding_dim=int(os.environ.get("TIF_TEXT_EMBEDDING_DIM", "64")),
-            text_channel_count=int(os.environ.get("TIF_TEXT_CHANNEL_COUNT", "48")),
-            text_kernel_sizes=_int_tuple_from_environment("TIF_TEXT_KERNEL_SIZES", (3, 4, 5)),
-            text_dropout=float(os.environ.get("TIF_TEXT_DROPOUT", "0.20")),
-            fusion_hidden_size=int(os.environ.get("TIF_FUSION_HIDDEN_SIZE", "128")),
-            fusion_dropout=float(os.environ.get("TIF_FUSION_DROPOUT", "0.15")),
+            device=os.environ.get("TIF_DEVICE", "auto"),
         )
 
 
@@ -291,7 +237,7 @@ def _pad_token_sequences(sequences: pd.Series, max_length: int = tif.utils.MAX_T
     return token_matrix
 
 
-def _sequence_plan(numeric_feature_columns: list[str], sequence_steps: tuple[int, ...]) -> tuple[list[str], list[int]]:
+def _sequence_plan(numeric_feature_columns: list[str]) -> tuple[list[str], list[int]]:
     bases = set()
     available_lags: dict[str, set[int]] = {}
     for column in numeric_feature_columns:
@@ -303,7 +249,7 @@ def _sequence_plan(numeric_feature_columns: list[str], sequence_steps: tuple[int
         bases.add(base)
         available_lags.setdefault(base, set()).add(lag)
     variables = sorted(base for base in bases if len(available_lags.get(base, set())) >= 2)
-    return variables, list(sequence_steps)
+    return variables, list(SEQUENCE_STEPS)
 
 
 def _build_numeric_sequence(
@@ -353,7 +299,7 @@ def _train_torch_model(
         Subset(tensor_dataset, validation_indices or train_indices), batch_size=config.batch_size, shuffle=False
     )
     model = model.to(device)
-    optimizer = torch.optim.Adam(model.parameters(), lr=config.learning_rate, weight_decay=config.weight_decay)
+    optimizer = torch.optim.Adam(model.parameters(), lr=config.learning_rate)
     criterion = nn.MSELoss()
     best_loss = float("inf")
     best_state = {key: value.detach().cpu().clone() for key, value in model.state_dict().items()}
@@ -388,7 +334,7 @@ def _train_torch_model(
                 "validation_loss": validation_loss,
             }
         )
-        if validation_loss < best_loss - config.early_stopping_min_delta:
+        if validation_loss < best_loss - 1e-8:
             best_loss = validation_loss
             best_state = {key: value.detach().cpu().clone() for key, value in model.state_dict().items()}
             stale_epochs = 0
@@ -574,7 +520,7 @@ def train_models(
     scaler.fit(dataset.loc[train_indices, numeric_feature_columns])
     numeric_scaled = scaler.transform(dataset[numeric_feature_columns]).astype(np.float32)
     scaled_numeric_frame = pd.DataFrame(numeric_scaled, columns=numeric_feature_columns)
-    sequence_variables, sequence_steps = _sequence_plan(numeric_feature_columns, config.sequence_steps)
+    sequence_variables, sequence_steps = _sequence_plan(numeric_feature_columns)
     numeric_sequence = _build_numeric_sequence(scaled_numeric_frame, sequence_variables, sequence_steps)
     token_ids = _pad_token_sequences(dataset["text_token_ids"], int(metadata["max_text_tokens"]))
     tensor_dataset = ForecastTensorDataset(numeric_scaled, numeric_sequence, token_ids, target)
@@ -601,7 +547,7 @@ def train_models(
         },
     }
 
-    ridge = Ridge(alpha=config.ridge_alpha)
+    ridge = Ridge(alpha=1.0)
     ridge.fit(numeric_scaled[train_indices], target[train_indices])
     predictions.append(_prediction_frame(dataset, "ridge", "classical", ridge.predict(numeric_scaled)))
     model_summary["ridge"] = {"type": "classical", "status": "trained", "detail": "numeric features"}
@@ -610,7 +556,7 @@ def train_models(
     forest = RandomForestRegressor(
         n_estimators=config.random_forest_trees,
         random_state=config.seed,
-        min_samples_leaf=config.random_forest_min_samples_leaf,
+        min_samples_leaf=3,
         n_jobs=-1,
     )
     forest.fit(numeric_scaled[train_indices], target[train_indices])
@@ -625,45 +571,10 @@ def train_models(
     device = _resolve_device(config)
     print(f"train: device={device}")
     torch_models: list[tuple[str, str, nn.Module, str]] = [
-        (
-            "numeric_mlp",
-            "deep_numeric",
-            NumericMLP(len(numeric_feature_columns), config.numeric_mlp_hidden_size, config.numeric_mlp_dropout),
-            "numeric",
-        ),
-        (
-            "numeric_gru",
-            "deep_numeric",
-            NumericGRU(len(sequence_variables), config.numeric_gru_hidden_size, config.numeric_gru_dropout),
-            "sequence",
-        ),
-        (
-            "text_cnn",
-            "deep_text",
-            TextCNNRegressor(
-                len(vocabulary),
-                config.text_embedding_dim,
-                config.text_channel_count,
-                config.text_kernel_sizes,
-                config.text_dropout,
-            ),
-            "text",
-        ),
-        (
-            "fusion_mlp",
-            "deep_fusion",
-            FusionRegressor(
-                len(numeric_feature_columns),
-                len(vocabulary),
-                config.fusion_hidden_size,
-                config.text_embedding_dim,
-                config.text_channel_count,
-                config.text_kernel_sizes,
-                config.text_dropout,
-                config.fusion_dropout,
-            ),
-            "fusion",
-        ),
+        ("numeric_mlp", "deep_numeric", NumericMLP(len(numeric_feature_columns)), "numeric"),
+        ("numeric_gru", "deep_numeric", NumericGRU(len(sequence_variables)), "sequence"),
+        ("text_cnn", "deep_text", TextCNNRegressor(len(vocabulary)), "text"),
+        ("fusion_mlp", "deep_fusion", FusionRegressor(len(numeric_feature_columns), len(vocabulary)), "fusion"),
     ]
     for model_name, model_type, model, input_kind in torch_models:
         trained_model, history = _train_torch_model(

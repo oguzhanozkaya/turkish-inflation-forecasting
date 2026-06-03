@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import calendar
-import os
 import re
 from dataclasses import dataclass
 from datetime import UTC, date, datetime, timedelta
@@ -15,7 +14,7 @@ from bs4 import BeautifulSoup
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 
-MAX_TOKENS = int(os.environ.get("TIF_MAX_TOKENS", "256"))
+MAX_TOKENS = 256
 
 
 @dataclass(frozen=True)

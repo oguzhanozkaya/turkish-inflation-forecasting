@@ -154,35 +154,7 @@ Training runtime can be controlled through environment variables without changin
 TIF_EPOCHS=200 TIF_PATIENCE=20 just train
 ```
 
-Training, preprocessing, and model architecture variables:
-
-| Variable                             | Default        | Description                                                                                |
-| ------------------------------------ | -------------- | ------------------------------------------------------------------------------------------ |
-| `TIF_SEED`                           | `447`          | Random seed for NumPy, Python, PyTorch, Random Forest, and deterministic experiment setup. |
-| `TIF_EPOCHS`                         | `36000`        | Maximum number of epochs for each neural model.                                            |
-| `TIF_PATIENCE`                       | `100000`       | Early-stopping patience measured in epochs without validation improvement.                 |
-| `TIF_BATCH_SIZE`                     | `32`           | Mini-batch size for PyTorch training and neural-model prediction.                          |
-| `TIF_LEARNING_RATE`                  | `0.00001`      | Adam optimizer learning rate for all neural models.                                        |
-| `TIF_WEIGHT_DECAY`                   | `0.0`          | Adam optimizer L2 weight decay for neural models.                                          |
-| `TIF_EARLY_STOPPING_MIN_DELTA`       | `0.00000001`   | Minimum validation-loss improvement required to reset early stopping.                      |
-| `TIF_RIDGE_ALPHA`                    | `1.0`          | Ridge regression regularization strength.                                                  |
-| `TIF_RANDOM_FOREST_TREES`            | `200`          | Number of trees in the Random Forest baseline.                                             |
-| `TIF_RANDOM_FOREST_MIN_SAMPLES_LEAF` | `3`            | Minimum samples per Random Forest leaf.                                                    |
-| `TIF_DEVICE`                         | `cuda`         | Training device: `cuda`, `cpu`, or `auto`.                                                 |
-| `TIF_SEQUENCE_STEPS`                 | `12,6,3,2,1,0` | Lag steps used to build numeric sequence tensors for the GRU.                              |
-| `TIF_MAX_TOKENS`                     | `256`          | Maximum token IDs kept per text window.                                                    |
-| `TIF_MAX_VOCAB_SIZE`                 | `5000`         | Maximum train-split vocabulary size for project text.                                      |
-| `TIF_TEXT_LOOKBACK_MONTHS`           | `12`           | Number of months of documents included in each forecast-origin text window.                |
-| `TIF_NUMERIC_MLP_HIDDEN_SIZE`        | `128`          | Hidden width of the numeric MLP.                                                           |
-| `TIF_NUMERIC_MLP_DROPOUT`            | `0.15`         | Dropout probability in the numeric MLP.                                                    |
-| `TIF_NUMERIC_GRU_HIDDEN_SIZE`        | `64`           | Hidden size of the numeric GRU.                                                            |
-| `TIF_NUMERIC_GRU_DROPOUT`            | `0.10`         | Dropout probability in the numeric GRU regression head.                                    |
-| `TIF_TEXT_EMBEDDING_DIM`             | `64`           | Dimension of the randomly initialized text embedding layer.                                |
-| `TIF_TEXT_CHANNEL_COUNT`             | `48`           | Number of convolution channels per TextCNN kernel size.                                    |
-| `TIF_TEXT_KERNEL_SIZES`              | `3,4,5`        | Comma-separated convolution kernel sizes for TextCNN encoders.                             |
-| `TIF_TEXT_DROPOUT`                   | `0.20`         | Dropout probability after TextCNN pooled representations.                                  |
-| `TIF_FUSION_HIDDEN_SIZE`             | `128`          | Hidden width of the numeric projection and fusion head.                                    |
-| `TIF_FUSION_DROPOUT`                 | `0.15`         | Dropout probability in the fusion regression head.                                         |
+Useful variables are `TIF_EPOCHS`, `TIF_PATIENCE`, `TIF_BATCH_SIZE`, `TIF_LEARNING_RATE`, `TIF_RANDOM_FOREST_TREES`, `TIF_SEED`, and `TIF_DEVICE`.
 
 ## Success Criteria
 

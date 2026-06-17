@@ -31,7 +31,7 @@ tif-evaluate = "tif.evaluate:main"
 dev = [
     "pytest>=9.0.1",
     "ruff>=0.15.13",
-    "ty>=0.0.39",
+    "ty>=0.0.46",
 ]
 docs = ["zensical>=0.0.43"]
 

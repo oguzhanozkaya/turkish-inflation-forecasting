@@ -1,7 +1,7 @@
 {
   "name": "turkish-inflation-forecasting",
   "devDependencies": {
-    "prettier": "3.8.3"
+    "prettier": "3.9.5"
   },
   "prettier": {
     "printWidth": 120,
